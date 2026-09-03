@@ -12,6 +12,19 @@ import {
 } from "./models.js";
 import { isUsableCatalog, readCatalogCache, writeCatalogCache } from "./cache.js";
 import { buildAntigravityCatalog, resolvedCatalog, type AntigravityCatalog } from "./grouping.js";
+import { antigravityEnv } from "../utils/util.js";
+
+export const DEFAULT_CATALOG_REFRESH_INTERVAL_MS = 4 * 60 * 60 * 1000;
+
+export function getCatalogRefreshIntervalMs(): number {
+  const envVal =
+    antigravityEnv("CATALOG_REFRESH_INTERVAL_MS") ?? antigravityEnv("REFRESH_INTERVAL_MS");
+  if (envVal) {
+    const parsed = Number.parseInt(envVal, 10);
+    if (!Number.isNaN(parsed) && parsed >= 0) return parsed;
+  }
+  return DEFAULT_CATALOG_REFRESH_INTERVAL_MS;
+}
 
 const fallbackCatalog = (): AntigravityCatalog => ({
   models: ANTIGRAVITY_MODELS,
@@ -49,6 +62,20 @@ export async function refreshAntigravityModels(
 
   const apiKey = apiKeyFromCredential(context.credential);
   if (!apiKey || context.signal.aborted) {
+    return current.models;
+  }
+
+  const lastCheckedAt = Math.max(
+    context.stored?.checkedAt ?? 0,
+    readCatalogCache()?.checkedAt ?? 0,
+  );
+  const now = Date.now();
+  if (
+    !context.force &&
+    lastCheckedAt > 0 &&
+    now >= lastCheckedAt &&
+    now - lastCheckedAt < getCatalogRefreshIntervalMs()
+  ) {
     return current.models;
   }
 

@@ -84,6 +84,7 @@ Review these permissions before approving access. If your credentials expire or 
 | `/antigravity.usage`            | Show the server-reported shared quota groups and reset times.                                                              |
 | `/antigravity.models`           | List available runtime models, remaining shared-pool quota, and capabilities.                                              |
 | `/antigravity.models all`       | Include tab/chat models normally hidden from the model list.                                                               |
+| `/antigravity.refresh`          | Force refresh the dynamic model catalog from Antigravity.                                                                  |
 | `/antigravity.doctor`           | Show sanitized provider diagnostics, including the endpoint, status, and resolved runtime model.                           |
 | `/antigravity.image <prompt>`   | Generate an image via Antigravity and save it under `.pi/generated-images/`. Optional `--ratio 16:9`, `--model`, `--path`. |
 
@@ -133,17 +134,18 @@ To limit which models Pi cycles through, enable specific entries in `~/.pi/agent
 
 All primary environment variables start with `ANTIGRAVITY_`. The legacy `NOAGY_` prefix is also accepted for compatibility.
 
-| Variable                    | Purpose                                                                                                          |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `ANTIGRAVITY_BASE_URL`      | Override the API base URL. It must be HTTPS, contain no URL credentials, and target an allowed Google APIs host. |
-| `ANTIGRAVITY_PROJECT_ID`    | Use a specific Cloud Code Assist project ID instead of discovery or the stable account fallback.                 |
-| `ANTIGRAVITY_CALLBACK_HOST` | Bind OAuth callback to `127.0.0.1`, `::1`, or `localhost` only. Defaults to `127.0.0.1`.                         |
-| `ANTIGRAVITY_USER_AGENT`    | Override the request user-agent.                                                                                 |
-| `ANTIGRAVITY_RUNTIME_MODEL` | Pin requests to a runtime model ID, bypassing discovered/fallback routing.                                       |
-| `ANTIGRAVITY_CLIENT_ID`     | Use a custom Google OAuth client ID.                                                                             |
-| `ANTIGRAVITY_CLIENT_SECRET` | Use a custom Google OAuth client secret. Keep it out of source control and shell history.                        |
-| `ANTIGRAVITY_NO_KEEPALIVE`  | Set to `1` to skip the keep-alive connection pool.                                                               |
-| `ANTIGRAVITY_NO_PREWARM`    | Set to `1` to skip the TLS pre-warm request made when the extension loads.                                       |
+| Variable                                  | Purpose                                                                                                          |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `ANTIGRAVITY_BASE_URL`                    | Override the API base URL. It must be HTTPS, contain no URL credentials, and target an allowed Google APIs host. |
+| `ANTIGRAVITY_PROJECT_ID`                  | Use a specific Cloud Code Assist project ID instead of discovery or the stable account fallback.                 |
+| `ANTIGRAVITY_CALLBACK_HOST`               | Bind OAuth callback to `127.0.0.1`, `::1`, or `localhost` only. Defaults to `127.0.0.1`.                         |
+| `ANTIGRAVITY_USER_AGENT`                  | Override the request user-agent.                                                                                 |
+| `ANTIGRAVITY_RUNTIME_MODEL`               | Pin requests to a runtime model ID, bypassing discovered/fallback routing.                                       |
+| `ANTIGRAVITY_CATALOG_REFRESH_INTERVAL_MS` | Override catalog refresh TTL in ms. Defaults to 4 hours (`14400000`). Set to `0` to always refresh.              |
+| `ANTIGRAVITY_CLIENT_ID`                   | Use a custom Google OAuth client ID.                                                                             |
+| `ANTIGRAVITY_CLIENT_SECRET`               | Use a custom Google OAuth client secret. Keep it out of source control and shell history.                        |
+| `ANTIGRAVITY_NO_KEEPALIVE`                | Set to `1` to skip the keep-alive connection pool.                                                               |
+| `ANTIGRAVITY_NO_PREWARM`                  | Set to `1` to skip the TLS pre-warm request made when the extension loads.                                       |
 
 By default, the provider tries `https://daily-cloudcode-pa.googleapis.com`, then the sandbox host, then `https://cloudcode-pa.googleapis.com`. Prefer the built-in OAuth client unless you have a reason to use your own credentials.
 

@@ -17,6 +17,9 @@ import {
   resolvedCatalog,
   setCatalogCachePathForTests,
   writeCatalogCache,
+  refreshAntigravityModels,
+  DEFAULT_CATALOG_REFRESH_INTERVAL_MS,
+  getCatalogRefreshIntervalMs,
   type AntigravityCatalog,
 } from "../src/models/index.js";
 
@@ -237,6 +240,36 @@ assert.ok(
   "ANTIGRAVITY_RUNTIME_MODEL remains an env override (applied in stream, not grouping)",
 );
 
+// TTL caching tests for refreshAntigravityModels
+assert.equal(
+  DEFAULT_CATALOG_REFRESH_INTERVAL_MS,
+  4 * 60 * 60 * 1000,
+  "default refresh interval is 4 hours",
+);
+assert.equal(getCatalogRefreshIntervalMs(), 4 * 60 * 60 * 1000, "reads default refresh interval");
+
+// Test TTL skip: when stored checkedAt is fresh (< 4 hours) and force is false, returns models without network
+const abortCtrl = new AbortController();
+let publishCalled = false;
+const mockContextFresh = {
+  credential: { type: "api_key" as const, key: "fake-token:fake-project" },
+  stored: {
+    models: catalog.models.map((m) => ({ ...m, provider: "antigravity", api: "antigravity-api" as const, baseUrl: "https://example.com" })),
+    checkedAt: Date.now() - 60_000, // 1 minute ago
+  },
+  allowNetwork: true,
+  force: false,
+  signal: abortCtrl.signal,
+  publish: async () => {
+    publishCalled = true;
+    return true;
+  },
+};
+
+const freshResult = await refreshAntigravityModels(mockContextFresh);
+assert.ok(freshResult.length > 0, "returns catalog models when fresh");
+assert.equal(publishCalled, false, "does not make network call or publish when cache is fresh");
+
 console.log(
-  "model discovery: grouping, overrides, empty/failure fallback, cache replace-on-success, and thinking config passed",
+  "model discovery: grouping, overrides, empty/failure fallback, cache replace-on-success, thinking config, and refresh TTL passed",
 );
