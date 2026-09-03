@@ -93,8 +93,10 @@ export async function refreshAntigravityModels(
       });
       return next.models;
     }
-  } catch {
+  } catch (error) {
     // Keep last-known-good models; a failed refresh must not wipe the catalog.
+    // Forced/manual refreshes must still report the failure to their caller.
+    if (context.force) throw error;
   }
 
   return getCurrentAntigravityCatalog().models;

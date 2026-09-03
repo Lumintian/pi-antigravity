@@ -158,7 +158,7 @@ export default function (pi: ExtensionAPI): void {
         );
       } catch (error) {
         const msg = error instanceof Error ? error.message : String(error);
-        emitCommandOutput(ctx, `Antigravity model refresh failed: ${msg}`, "error");
+        emitCommandOutput(ctx, `Antigravity model refresh failed: ${redactSecrets(msg)}`, "error");
       }
     },
   });
