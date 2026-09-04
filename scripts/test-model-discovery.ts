@@ -248,6 +248,10 @@ assert.equal(
 );
 assert.equal(getCatalogRefreshIntervalMs(), 4 * 60 * 60 * 1000, "reads default refresh interval");
 
+process.env.ANTIGRAVITY_CATALOG_REFRESH_INTERVAL_MS = "1800000";
+assert.equal(getCatalogRefreshIntervalMs(), 1800000, "reads ANTIGRAVITY_ override");
+delete process.env.ANTIGRAVITY_CATALOG_REFRESH_INTERVAL_MS;
+
 // Test TTL skip: when stored checkedAt is fresh (< 4 hours) and force is false, returns models without network
 const abortCtrl = new AbortController();
 let publishCalled = false;
@@ -269,6 +273,32 @@ const mockContextFresh = {
 const freshResult = await refreshAntigravityModels(mockContextFresh);
 assert.ok(freshResult.length > 0, "returns catalog models when fresh");
 assert.equal(publishCalled, false, "does not make network call or publish when cache is fresh");
+
+// Test TTL skip when context.stored has no checkedAt, but file cache has fresh checkedAt
+const dir2 = mkdtempSync(join(tmpdir(), "antigravity-catalog-ttl-"));
+const cachePath2 = join(dir2, "antigravity-model-catalog.json");
+try {
+  setCatalogCachePathForTests(cachePath2);
+  writeCatalogCache(catalog, cachePath2);
+  let publishCalled2 = false;
+  const mockContextFileFresh = {
+    credential: { type: "api_key" as const, key: "fake-token:fake-project" },
+    stored: undefined,
+    allowNetwork: true,
+    force: false,
+    signal: abortCtrl.signal,
+    publish: async () => {
+      publishCalled2 = true;
+      return true;
+    },
+  };
+  const fileFreshResult = await refreshAntigravityModels(mockContextFileFresh);
+  assert.ok(fileFreshResult.length > 0, "returns catalog models when file cache is fresh");
+  assert.equal(publishCalled2, false, "skips network call when file cache checkedAt is fresh");
+} finally {
+  setCatalogCachePathForTests(undefined);
+  rmSync(dir2, { recursive: true, force: true });
+}
 
 console.log(
   "model discovery: grouping, overrides, empty/failure fallback, cache replace-on-success, thinking config, and refresh TTL passed",

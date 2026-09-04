@@ -81,17 +81,19 @@ export async function refreshAntigravityModels(
 
   try {
     const discovered = await discoverAntigravityModels(apiKey, context.signal);
+    if (context.signal.aborted) return current.models;
     const next = resolvedCatalog(discovered, current);
-    if (next !== current && isUsableCatalog(next)) {
-      applyAntigravityCatalog(next);
-      writeCatalogCache(next);
+    const catalogToSave = isUsableCatalog(next) ? next : current;
+    if (isUsableCatalog(catalogToSave)) {
+      applyAntigravityCatalog(catalogToSave);
+      writeCatalogCache(catalogToSave);
       await context.publish({
         persist: {
-          models: toStoredModels(next.models),
+          models: toStoredModels(catalogToSave.models),
           checkedAt: Date.now(),
         },
       });
-      return next.models;
+      return catalogToSave.models;
     }
   } catch (error) {
     // Keep last-known-good models; a failed refresh must not wipe the catalog.
