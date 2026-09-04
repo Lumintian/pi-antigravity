@@ -140,7 +140,7 @@ export default function (pi: ExtensionAPI): void {
         } else {
           const discovered = await discoverAntigravityModels(apiKey);
           const next = resolvedCatalog(discovered, getCurrentAntigravityCatalog());
-          if (isUsableCatalog(next)) {
+          if (isUsableCatalog(discovered)) {
             applyAntigravityCatalog(next);
             writeCatalogCache(next);
           }
